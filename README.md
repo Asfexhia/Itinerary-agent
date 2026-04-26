@@ -1,10 +1,22 @@
 # Itinerary Agent
 
-Itinerary Agent is an LLM-assisted itinerary planning project that turns natural-language travel requests into multi-stop plans. The system parses user intent, searches for real places, checks constraints such as time and ratings, and visualizes the resulting route on an interactive Mapbox frontend with animated road-following paths.
+## Overview
+
+Itinerary Agent is an LLM-assisted itinerary planning system that converts natural language queries into structured multi-stop travel plans. The system integrates large language model based intent parsing with a constraint-aware planning pipeline to generate feasible itineraries grounded in real-world geographic data. The resulting plans are visualized through an interactive map interface using realistic road routes.
 
 ## What It Does
 
-The project combines LLM-based intent parsing with an agent loop and a constraint solver. Users can request plans such as nearby restaurants, parks, museums, or other points of interest from a chosen start location. The backend resolves places with Google Maps APIs and returns structured stops, travel estimates, and feasibility status. The frontend displays the plan on a Mapbox map using Directions API routes rather than straight-line connections.
+The system takes user queries expressed in natural language and produces executable travel plans. It first extracts tasks and constraints from the query using an LLM-based parser. These tasks are then grounded to real-world locations through map APIs. A planning module constructs candidate itineraries, which are subsequently validated by a constraint solver that enforces feasibility conditions such as time limits and ordering constraints. The final plan is returned as a structured sequence of stops with estimated travel times and is visualized on a map using route data rather than straight-line connections.
+
+## System Components
+
+The system consists of the following components:
+
+· Intent parser: extracts tasks and constraints from natural language input
+· Agent loop: iteratively generates and refines candidate plans
+· Constraint solver: validates plans with respect to time and feasibility constraints
+· Maps integration: resolves real locations and travel times using external APIs
+· Frontend visualization: displays routes and stops using map-based rendering
 
 ## Quick Start
 
@@ -22,10 +34,12 @@ npm install
 npm run dev
 ```
 
+## Environment Variables
+
 Create the required `.env` files before running with real APIs:
 
 - Project root `.env`: `GOOGLE_MAPS_API_KEY=your_google_maps_key`
-- `frontend/.env`: `VITE_MAPBOX_ACCESS_TOKEN=your_mapbox_token`
+- frontend/ `.env`: `VITE_MAPBOX_ACCESS_TOKEN=your_mapbox_token`
 
 ## Video Links
 
@@ -34,15 +48,38 @@ Create the required `.env` files before running with real APIs:
 
 ## Evaluation
 
-The evaluation compares a baseline LLM-only planner against the agent pipeline with and without constraint solving. Metrics include success rate, retry behavior, and failure type analysis.
+The system is evaluated by comparing three configurations:
 
-| Method | Success Rate | Avg. Retries | Main Failure Modes |
+1. Baseline LLM: parses tasks without enforcing constraints
+2. Agent without solver: generates structured plans without constraint validation
+3. Agent with solver: enforces time and feasibility constraints
+   
+## Result
+| Method | Success Rate | Strict Valid Rate | Avg Retries |
 | --- | ---: | ---: | --- |
-| Baseline LLM | TBD | TBD | Invalid plans, missing constraints |
-| Agent without solver | TBD | TBD | Time-infeasible plans, weak validation |
-| Agent with solver | TBD | TBD | API lookup failures, unsatisfiable constraints |
+| Baseline LLM |8/8 (100%) | 0/8 (0%) | 0.00 |
+| Agent without solver | 8/8 (100%) | 8/8 (100%) | 0.00 |
+| Agent with solver | 5/8 (62%) | 5/8 (62%) | 0.00 |
 
-Final numeric results should be filled in after running the evaluation script on the selected test set.
+## Analysis
+
+The baseline LLM achieves a high success rate because it only verifies whether tasks are parsed, without checking feasibility. As a result, its outputs are often not executable in practice.
+
+The agent without constraint solving produces structured plans but does not enforce time constraints. While all outputs are considered successful, some plans are infeasible when evaluated against real-world constraints.
+
+The agent with constraint solving achieves a lower success rate, but all successful outputs satisfy the defined constraints. The reduction in success rate is due to the rejection of infeasible plans rather than system errors.
+
+## Error analysis
+
+All observed failures fall into a single category:
+
+· time_constraint_violation (3 cases)
+
+These failures occur when the requested number of stops or travel requirements exceed the available time. The constraint solver correctly identifies and rejects such plans, indicating that the system is functioning as intended.
+
+## Visualization
+
+The frontend visualizes itineraries using map-based rendering. Routes are generated using a directions API to follow actual roads rather than straight-line interpolation between stops. This improves realism and provides a more accurate representation of travel paths.
 
 ## Individual Contributions
 
@@ -60,3 +97,7 @@ This is a solo academic project. All core design decisions, implementation work,
 ├── SETUP.md                  # Detailed setup instructions
 └── ATTRIBUTION.md            # Tooling and assistance disclosure
 ```
+
+## Attribution
+
+Cursor was used as a coding assistant to support implementation, including generating boilerplate code, assisting with debugging, and creating test scripts. All core system design, algorithmic logic, and evaluation methodology were developed independently.
