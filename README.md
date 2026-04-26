@@ -2,7 +2,13 @@
 
 ## Overview
 
-Itinerary Agent is an LLM-assisted itinerary planning system that converts natural language queries into structured multi-stop travel plans. The system integrates large language model based intent parsing with a constraint-aware planning pipeline to generate feasible itineraries grounded in real-world geographic data. The resulting plans are visualized through an interactive map interface using realistic road routes.
+Planning a feasible multi-stop itinerary in real-world environments is a non-trivial task for users, as it requires simultaneously satisfying multiple competing constraints, including identifying relevant and high-quality points of interest, estimating realistic travel time between locations, and ensuring that the overall plan fits within limited temporal budgets. Traditional approaches, such as manual search through mapping applications, are both time-consuming and cognitively demanding because users must repeatedly switch between searching for places, evaluating their quality, and mentally reasoning about route feasibility.
+
+This project investigates whether an LLM-powered agentic system, combined with external geographic APIs and constraint-based validation, can automate the process of generating feasible and realistic itineraries from natural language queries. The core research question is:
+
+Can a structured LLM-based agent reliably transform natural language travel requests into time-feasible, high-quality multi-stop itineraries while respecting real-world constraints such as travel time, location quality, and route feasibility?
+
+More specifically, the project explores whether integrating intent parsing, real-world place retrieval, and explicit constraint checking can improve the reliability of generated plans compared to a purely generative LLM approach that lacks external validation.
 
 ## What It Does
 
