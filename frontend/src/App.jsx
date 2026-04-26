@@ -31,6 +31,9 @@ const FAILURE_MESSAGES = {
   invalid_plan: 'The planner could not produce a valid itinerary. Try rephrasing your request.',
 }
 
+const HISTORY_KEY = 'itinerary-agent-history'
+const MAX_HISTORY = 3
+
 function segmentLength(a, b) {
   const dx = b[0] - a[0]
   const dy = b[1] - a[1]
@@ -294,6 +297,20 @@ function escapeHtml(s) {
     .replaceAll('"', '&quot;')
 }
 
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY)
+    const parsed = JSON.parse(raw || '[]')
+    return Array.isArray(parsed) ? parsed.slice(0, MAX_HISTORY) : []
+  } catch {
+    return []
+  }
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value))
+}
+
 function App() {
   const [origin, setOrigin] = useState('Boston University')
   const [query, setQuery] = useState(
@@ -303,6 +320,7 @@ function App() {
   const [apiResult, setApiResult] = useState(null)
   const [mapInstanceKey, setMapInstanceKey] = useState(0)
   const [networkError, setNetworkError] = useState('')
+  const [history, setHistory] = useState(loadHistory)
 
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
@@ -330,6 +348,10 @@ function App() {
   useEffect(() => {
     apiResultRef.current = apiResult
   }, [apiResult])
+
+  useEffect(() => {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)))
+  }, [history])
 
   useEffect(() => {
     if (!MAPBOX_ACCESS_TOKEN) return
@@ -442,6 +464,16 @@ function App() {
 
       const data = await resp.json()
       setApiResult(data)
+      setHistory((prev) => [
+        {
+          id: `${Date.now()}`,
+          origin: origin.trim(),
+          query: q,
+          result: data,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ].slice(0, MAX_HISTORY))
     } catch (err) {
       setNetworkError(
         err instanceof Error
@@ -451,6 +483,14 @@ function App() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const restoreHistory = (entry) => {
+    setLoading(false)
+    setNetworkError('')
+    setOrigin(entry.origin)
+    setQuery(entry.query)
+    setApiResult(cloneJson(entry.result))
   }
 
   const failureReason = apiResult?.error_reason ?? 'invalid_plan'
@@ -528,6 +568,64 @@ function App() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-medium text-slate-500">Recent plans</p>
+              {history.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setHistory([])}
+                  className="text-[10px] font-medium text-slate-400 hover:text-slate-600"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            {history.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-400">
+                No generated plans yet.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {history.map((entry, idx) => {
+                  const stopCount = Array.isArray(entry.result?.plan)
+                    ? entry.result.plan.length
+                    : 0
+                  return (
+                    <button
+                      key={entry.id}
+                      type="button"
+                      onClick={() => restoreHistory(entry)}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-slate-800">#{idx + 1}</span>
+                        <span
+                          className={
+                            entry.result?.success
+                              ? 'text-green-600'
+                              : 'text-red-500'
+                          }
+                        >
+                          {entry.result?.success ? 'success' : 'failed'}
+                        </span>
+                      </div>
+                      <p className="mt-1 truncate text-slate-600">{entry.origin}</p>
+                      <p className="mt-0.5 line-clamp-2 text-slate-500">{entry.query}</p>
+                      <p className="mt-1 text-[10px] text-slate-400">
+                        {stopCount} stops ·{' '}
+                        {new Date(entry.createdAt).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           <div className="mt-auto flex flex-col gap-3 border-t border-slate-100 pt-4">
