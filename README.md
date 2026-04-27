@@ -49,7 +49,7 @@ Create the required `.env` files before running with real APIs:
 
 ## Video Links
 
-- Demo video: `[placeholder]`
+- Demo video: `(https://youtu.be/qMtVvO0OEj4)`
 - Code walkthrough: `(https://youtu.be/hpVo8ezWyY8)`
 
 ## Evaluation
